@@ -42,7 +42,6 @@ def GraphForDropoutDL1Layer(train_dataset, train_labels, valid_dataset, test_dat
 		#Training computation in the 1st layer
 		logits1 = tf.matmul(tf_train_datasetWithDropOut, weight1) + biases1
 		activation1WithDropout = tf.nn.dropout(tf.nn.relu(logits1), keep_prob = keep_prob_hidden);
-		activation1WithDropout = tf.nn.relu(logits1);
 		
 
 		

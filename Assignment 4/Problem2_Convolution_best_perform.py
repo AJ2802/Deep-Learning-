@@ -35,36 +35,24 @@ def convolution(valid_dataset, test_dataset):
 		#Variables:
 		model_1_layer1_weights = tf.Variable(tf.truncated_normal([patch_size, patch_size, num_channels, depth], stddev = np.sqrt(2.0 / (patch_size * patch_size * num_channels)))) 
 		model_1_layer1_biases = tf.Variable(tf.zeros([depth])) # why constant is 0
+	
+		model_2_layer1_weights = tf.Variable(tf.truncated_normal([unit_patch_size, unit_patch_size, num_channels, depth], stddev = np.sqrt(2.0 / (unit_patch_size * unit_patch_size * num_channels))))
+		model_2_layer1_biases = tf.Variable(tf.zeros([depth]))
 		
-		model_1_layer2_weights = tf.Variable(tf.truncated_normal([patch_size, patch_size, depth, depth], stddev = np.sqrt(2.0 / (patch_size * patch_size * depth // 4)))) 
-		model_1_layer2_biases = tf.Variable(tf.constant(1.0, shape =[depth]))   #why constant is 1
+		model_3_layer1_weights = tf.Variable(tf.truncated_normal([small_patch_size, small_patch_size, num_channels, depth], stddev = np.sqrt(2.0 / (small_patch_size * small_patch_size * num_channels )))) 
+		model_3_layer1_biases = tf.Variable(tf.zeros([depth]))   
 		
-		layer3_weights = tf.Variable(tf.truncated_normal([image_size//4 *image_size//4 *depth * 3, num_hidden], stddev = np.sqrt(2.0 / (image_size * image_size * depth // 4 // 4 * 3 ))))		
+		layer3_weights = tf.Variable(tf.truncated_normal([image_size *image_size *depth //4 * 3, num_hidden], stddev = np.sqrt(2.0 / (image_size * image_size * depth // 4  * 3 ))))		
 		layer3_biases = tf.Variable(tf.constant(1.0, shape=[num_hidden]))
 		
 		layer4_weights = tf.Variable(tf.truncated_normal([num_hidden, num_labels], stddev = np.sqrt(2.0/num_hidden)))
 		layer4_biases = tf.Variable(tf.constant(1.0, shape = [num_labels]))
-	
-		model_2_layer1_weights = tf.Variable(tf.truncated_normal([unit_patch_size, unit_patch_size, num_channels, depth], stddev = np.sqrt(2.0 / (unit_patch_size * unit_patch_size * num_channels))))
-		model_2_layer1_biases = tf.Variable(tf.zeros([depth]))
-		model_2_layer2_weights = tf.Variable(tf.truncated_normal([unit_patch_size, unit_patch_size, depth, depth], stddev = np.sqrt(2.0 / (unit_patch_size * unit_patch_size  * depth // 4 )))) 
-		model_2_layer2_biases = tf.Variable(tf.constant(1.0, shape =[depth]))   #why constant is 1
 		
-		model_3_layer1_weights = tf.Variable(tf.truncated_normal([small_patch_size, small_patch_size, num_channels, depth], stddev = np.sqrt(2.0 / (small_patch_size * small_patch_size * num_channels )))) 
-		model_3_layer1_biases = tf.Variable(tf.zeros([depth]))   
-		model_3_layer2_weights = tf.Variable(tf.truncated_normal([small_patch_size, small_patch_size, depth, depth], stddev = np.sqrt(2.0 / (small_patch_size * small_patch_size * depth // 4)))) 
-		model_3_layer2_biases = tf.Variable(tf.constant(1.0, shape =[depth]))   #why constant is 1
-
 		#Model
-		def convModel(data, weights_layer1, biases_layer1, weights_layer2, biases_layer2, keep_prob_hidden):
+		def convModel(data, weights_layer1, biases_layer1, keep_prob_hidden):
 			hidden = tf.nn.relu(tf.nn.conv2d(data, weights_layer1, [1,1,1,1], padding ='SAME')+ biases_layer1)			
 			max_pool = tf.nn.max_pool(hidden, ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
-			dropout = tf.nn.dropout(max_pool, keep_prob = keep_prob_hidden);
-			
-			hidden = tf.nn.relu(tf.nn.conv2d(dropout, weights_layer2, [1,1,1,1], padding ='SAME')+ biases_layer2)			
-			max_pool = tf.nn.max_pool(hidden, ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
-			dropout = tf.nn.dropout(max_pool, keep_prob = keep_prob_hidden);
-			
+			dropout = tf.nn.dropout(max_pool, keep_prob = keep_prob_hidden);			
 			return dropout;
 			
 			
@@ -72,19 +60,9 @@ def convolution(valid_dataset, test_dataset):
 			
 		def model(data, keep_prob_hidden):
 			
-			#hidden = tf.nn.relu(tf.nn.conv2d(data, layer1_weights, [1,1,1,1], padding ='SAME')+ layer1_biases)			
-			#max_pool = tf.nn.max_pool(hidden, ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
-			#dropout = tf.nn.dropout(max_pool, keep_prob = keep_prob_hidden);
-			
-			#hidden= tf.nn.conv2d(max_pool, layer2_weights, [1,1,1,1], padding = 'SAME')
-			#max_pool = tf.nn.max_pool(hidden, ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
-			#dropout = tf.nn.dropout(max_pool, keep_prob = keep_prob_hidden);
-			
-			model1 = convModel(data, model_1_layer1_weights, model_1_layer1_biases,  model_1_layer2_weights, model_1_layer2_biases, keep_prob_hidden);
-			model2 = convModel(data, model_2_layer1_weights, model_2_layer1_biases,  model_2_layer2_weights, model_2_layer2_biases, keep_prob_hidden);
-			model3 = convModel(data, model_3_layer1_weights, model_3_layer1_biases,  model_3_layer2_weights, model_3_layer2_biases, keep_prob_hidden);
-			
-			
+			model1 = convModel(data, model_1_layer1_weights, model_1_layer1_biases, keep_prob_hidden);
+			model2 = convModel(data, model_2_layer1_weights, model_2_layer1_biases, keep_prob_hidden);
+			model3 = convModel(data, model_3_layer1_weights, model_3_layer1_biases, keep_prob_hidden);		
 
 			shape1 = model1.get_shape().as_list()
 			reshape1 = tf.reshape(model1, [shape1[0], shape1[1]*shape1[2]*shape1[3]]) #shape[0] ~~batch_size, shape[1]~~out_height, shape[2]~~out_width, shape3~~depth
@@ -108,14 +86,14 @@ def convolution(valid_dataset, test_dataset):
 		Reg =  0.002 *(tf.nn.l2_loss(layer3_biases)+ tf.nn.l2_loss(layer3_biases)+ tf.nn.l2_loss(layer4_weights) + tf.nn.l2_loss(layer4_biases))
 		loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = tf_train_labels, logits = logits)) + Reg
 	
-	# Optimizer
+		# Optimizer
 		global_step = tf.Variable(0)
 		learning_rate = tf.train.exponential_decay(0.001, global_step, 10000, 0.5, staircase=True) #staircase stands for integer division of global step /decay_step (an parameter right after global_step)
 		optimizer = tf.train.AdamOptimizer(learning_rate).minimize(loss, global_step = global_step);
 		
 		#optimizer = tf.train.GradientDescentOptimizer(0.05).minimize(loss)
 
-	#Predictions for the training, validation, and test data
+		#Predictions for the training, validation, and test data
 		train_prediction = tf.nn.softmax(logits)
 		valid_prediction = tf.nn.softmax(model(tf_valid_dataset, 1))
 		test_prediction = tf.nn.softmax(model(tf_test_dataset, 1))
